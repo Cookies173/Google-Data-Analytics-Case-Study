@@ -1,0 +1,447 @@
+---
+title: "Google Data Analytics"
+author: "Meet"
+date: "2023-04-02"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+### Importing Library
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(chron) # For time 
+```
+
+## Importing Data
+
+```{r}
+march_22 <- read.csv("Biker_03_2022.csv")
+april_22 <- read.csv("Biker_04_2022.csv")
+may_22 <- read.csv("Biker_05_2022.csv")
+june_22 <- read.csv("Biker_06_2022.csv")
+july_22 <- read.csv("Biker_07_2022.csv")
+august_22 <- read.csv("Biker_08_2022.csv")
+september_22 <- read.csv("Biker_09_2022.csv")
+october_22 <- read.csv("Biker_10_2022.csv")
+november_22 <- read.csv("Biker_11_2022.csv")
+december_22 <- read.csv("Biker_12_2022.csv")
+january_23 <- read.csv("Biker_01_2023.csv")
+february_23 <- read.csv("Biker_02_2023.csv")
+```
+
+Combine to one data set named as *alldata*.
+
+```{r}
+alldata <- rbind(march_22, april_22, may_22, june_22, july_22, august_22, september_22, october_22, november_22, december_22, january_23, february_23)
+```
+
+Get a overview of the dataset.
+
+```{r}
+head(alldata)
+glimpse(alldata)
+summary(alldata)
+```
+
+## Cleaning data
+
+To avoid the future complications, let's first make the missing and spacing values if any into **NA**
+
+```{r}
+alldata[alldata=="" | alldata==" "] <- NA
+```
+
+### Check NA values
+
+Let's check how many missing values are there in the dataset column-wise.
+
+#### ride_id
+
+```{r}
+table(is.na(alldata$ride_id))
+```
+
+#### rideable_type
+
+```{r}
+table(is.na(alldata$rideable_type))
+```
+
+#### started_at
+
+```{r}
+table(is.na(alldata$started_at))
+```
+
+#### ended_at
+
+```{r}
+table(is.na(alldata$ended_at))
+```
+
+#### start_station_name
+
+```{r}
+table(is.na(alldata$start_station_name))
+```
+
+Now, we know that there are some missing value *(850418)* in this column so if needed we can add...
+
+#### start_station_id
+
+```{r}
+table(is.na(alldata$start_station_id))
+```
+
+This column have *850550* missing values
+
+#### end_station_name
+
+```{r}
+table(is.na(alldata$end_station_name))
+```
+
+This column have *909038* missing values
+
+#### end_station_id
+
+```{r}
+table(is.na(alldata$end_station_id))
+```
+
+This column have *909179* missing values
+
+#### start_lat
+
+```{r}
+table(is.na(alldata$start_lat))
+```
+
+#### start_lng
+
+```{r}
+table(is.na(alldata$start_lng))
+```
+
+#### end_lat
+
+```{r}
+table(is.na(alldata$end_lat))
+```
+
+This column have *5938* missing values
+
+#### end_lng
+
+```{r}
+table(is.na(alldata$end_lng))
+```
+
+This column have *5938* missing values
+
+#### member_casual
+
+```{r}
+table(is.na(alldata$member_casual))
+```
+
+#### ride_time
+
+```{r}
+table(is.na(alldata$ride_time))
+```
+
+#### day_of_week
+
+```{r}
+table(is.na(alldata$day_of_week))
+```
+
+## Analysis
+
+Let's plot the counts of bike rides on each day of the week with different types of riders
+
+```{r}
+ggplot(data=alldata) +
+  geom_bar(mapping=aes(x=day_of_week, fill=rideable_type)) +
+  facet_wrap(~member_casual) +
+  scale_y_continuous(labels = scales::comma) +
+  annotate("text",x=1, y=150000, label="Sunday", angle=90)+
+  annotate("text",x=2, y=150000, label="Monday", angle=90)+
+  annotate("text",x=3, y=150000, label="Tuesday", angle=90)+
+  annotate("text",x=4, y=150000, label="Wednesday", angle=90)+
+  annotate("text",x=5, y=150000, label="Thursday", angle=90)+
+  annotate("text",x=6, y=150000, label="Friday", angle=90)+
+  annotate("text",x=7, y=150000, label="Saturday", angle=90) +
+  labs(title="No. of Rides with different types of bikes", x="Day of the week", y="Counts")
+ggsave("No. of Rides with different types of bikes.png")
+```
+
+### Manipulating Data
+
+Add some important column which will be useful for our analysis to the *alldata* dataset like *date*, *month*, *day*, *year*
+
+```{r}
+date <- c(1:5829084)
+month <- c(1:5829084)
+day <- c(1:5829084)
+year <- c(1:5829084)
+df <- data.frame(date,month,day,year)
+df$date[date!=""] <- NA
+df$month[month!=""] <- NA
+df$day[day!=""] <- NA
+df$year[year!=""] <- NA
+```
+
+```{r}
+alldata <- cbind(alldata, df)
+```
+
+As *started_at* is in the "character" type so lets first convert it to "factor(integer)" form for further making it separate *DateTime* format to *Date*
+
+```{r}
+alldata$started_at <- factor(alldata$started_at)
+```
+
+```{r}
+typeof(alldata$started_at)
+```
+
+Now, convert "factor" to "DateTime" format
+
+```{r}
+alldata$started_at <- mdy_hm(alldata$started_at)
+```
+
+and finally separate the Date out
+
+```{r}
+alldata$date <- as.Date(alldata$started_at)
+```
+
+Now separate year, month and day
+
+```{r}
+alldata$year <- year(alldata$started_at)
+```
+
+```{r}
+alldata$month <- month(alldata$started_at)
+```
+
+```{r}
+alldata$day <- day(alldata$started_at)
+```
+
+### Plotting Data
+
+Let's first separate out a dataset in which there will be data of membership type, day, and count of number of rides in a grouped form...
+
+```{r}
+rides_data <- alldata %>% 
+  group_by(member_casual, day_of_week) %>% 
+  summarize(number_of_rides=n()) %>% 
+  select(member_casual, day_of_week, number_of_rides)
+```
+
+Plotting the data
+
+```{r}
+ggplot(data=rides_data) +
+  geom_col(mapping=aes(x=day_of_week, y=number_of_rides), fill="pink") +
+  facet_wrap(~member_casual) + 
+  scale_y_continuous(labels = scales::comma) +
+  annotate("text",x=1, y=150000, label="Sunday", angle=90)+
+  annotate("text",x=2, y=150000, label="Monday", angle=90)+
+  annotate("text",x=3, y=150000, label="Tuesday", angle=90)+
+  annotate("text",x=4, y=150000, label="Wednesday", angle=90)+
+  annotate("text",x=5, y=150000, label="Thursday", angle=90)+
+  annotate("text",x=6, y=150000, label="Friday", angle=90)+
+  annotate("text",x=7, y=150000, label="Saturday", angle=90)+
+  labs(title="Total rides on each day of the week", x="Day of the week", y="No. of rides")
+ggsave("Total rides on each day of the week.png")
+```
+
+#### Manipulating Data
+
+Let's find the total ride time to gain some insights\
+First convert *ride_time* from "character" to "integer" in *alldata* dataset
+
+```{r}
+alldata$ride_time <- factor(alldata$ride_time)
+```
+
+Add one column *average_ride_time* into our newly created dataset
+
+```{r}
+average_ride_time <- c(1:14)
+average_ride_time <- data.frame(average_ride_time)
+average_ride_time[!is.na(average_ride_time)] <- NA
+rides_data <- cbind(rides_data, average_ride_time)
+```
+
+Manually enter the values using this code to find the mean of each row in our new dataset, **rides_data**
+
+```{r}
+mean(times((alldata %>% filter(member_casual=="member", day_of_week==7))$ride_time))
+```
+
+Fill the data found by the above code
+
+```{r}
+rides_data$average_ride_time[rides_data$member_casual=="casual"&rides_data$day_of_week==1] <- "00:24:49"
+rides_data$average_ride_time[rides_data$member_casual=="casual"&rides_data$day_of_week==2] <- "00:22:02"
+rides_data$average_ride_time[rides_data$member_casual=="casual"&rides_data$day_of_week==3] <- "00:19:17"
+rides_data$average_ride_time[rides_data$member_casual=="casual"&rides_data$day_of_week==4] <- "00:18:38"
+rides_data$average_ride_time[rides_data$member_casual=="casual"&rides_data$day_of_week==5] <- "00:19:20"
+rides_data$average_ride_time[rides_data$member_casual=="casual"&rides_data$day_of_week==6] <- "00:20:20"
+rides_data$average_ride_time[rides_data$member_casual=="casual"&rides_data$day_of_week==7] <- "00:24:24"
+```
+
+```{r}
+rides_data$average_ride_time[rides_data$member_casual=="member"&rides_data$day_of_week==1] <- "00:13:36"
+rides_data$average_ride_time[rides_data$member_casual=="member"&rides_data$day_of_week==2] <- "00:11:50"
+rides_data$average_ride_time[rides_data$member_casual=="member"&rides_data$day_of_week==3] <- "00:11:37"
+rides_data$average_ride_time[rides_data$member_casual=="member"&rides_data$day_of_week==4] <- "00:11:42"
+rides_data$average_ride_time[rides_data$member_casual=="member"&rides_data$day_of_week==5] <- "00:11:52"
+rides_data$average_ride_time[rides_data$member_casual=="member"&rides_data$day_of_week==6] <- "00:12:05"
+rides_data$average_ride_time[rides_data$member_casual=="member"&rides_data$day_of_week==7] <- "00:13:43"
+```
+
+```{r}
+typeof(rides_data$average_ride_time)
+```
+
+Values filled is of "character" format, converting into "factor"
+
+```{r}
+rides_data$average_ride_time <- factor(rides_data$average_ride_time)
+```
+
+```{r}
+summary(rides_data)
+```
+
+Just verifying...
+
+```{r}
+sum(rides_data$number_of_rides)
+```
+
+Making data more readable by making some minor upgrades
+
+```{r}
+rides_data$day_of_week[rides_data$day_of_week==1] <- "Sunday"
+rides_data$day_of_week[rides_data$day_of_week==2] <- "Monday"
+rides_data$day_of_week[rides_data$day_of_week==3] <- "Tuesday"
+rides_data$day_of_week[rides_data$day_of_week==4] <- "Wednesday"
+rides_data$day_of_week[rides_data$day_of_week==5] <- "Thursday"
+rides_data$day_of_week[rides_data$day_of_week==6] <- "Friday"
+rides_data$day_of_week[rides_data$day_of_week==7] <- "Saturday"
+```
+
+#### Export New Dataset
+
+```{r}
+write.csv(rides_data, "Final Analysis.csv")
+```
+
+Create another dataset to analysis number of rides month-wise
+
+```{r}
+rides_data_monthly <- alldata %>% 
+  group_by(member_casual, month) %>% 
+  summarize(number_of_rides=n()) %>% 
+  select(member_casual, month, number_of_rides)
+```
+
+Plot the data...
+
+```{r}
+ggplot(data=rides_data_monthly) +
+  geom_col(mapping=aes(x=month, y=number_of_rides), fill="orange")+
+  facet_wrap(~member_casual)+
+  scale_y_continuous(labels = scales::comma)+
+  labs(title = "No. of rides Month-wise", x="Month", y="No. of Rides")+
+  annotate("text",x=1, y=100000, label="January", angle=90)+
+  annotate("text",x=2, y=100000, label="February", angle=90)+
+  annotate("text",x=3, y=100000, label="March", angle=90)+
+  annotate("text",x=4, y=100000, label="April", angle=90)+
+  annotate("text",x=5, y=100000, label="May", angle=90)+
+  annotate("text",x=6, y=100000, label="June", angle=90)+
+  annotate("text",x=7, y=100000, label="July", angle=90)+
+  annotate("text",x=8, y=100000, label="August", angle=90)+
+  annotate("text",x=9, y=100000, label="September", angle=90)+
+  annotate("text",x=10, y=100000, label="October", angle=90)+
+  annotate("text",x=11, y=100000, label="November", angle=90)+
+  annotate("text",x=12, y=100000, label="December", angle=90)
+ggsave("No. of rides Month-wise.png")
+```
+
+Make data more readable and export it for further possible use
+
+```{r}
+rides_data_monthly$month[rides_data_monthly$month==1] <- "January"
+rides_data_monthly$month[rides_data_monthly$month==2] <- "February"
+rides_data_monthly$month[rides_data_monthly$month==3] <- "March"
+rides_data_monthly$month[rides_data_monthly$month==4] <- "April"
+rides_data_monthly$month[rides_data_monthly$month==5] <- "May"
+rides_data_monthly$month[rides_data_monthly$month==6] <- "June"
+rides_data_monthly$month[rides_data_monthly$month==7] <- "July"
+rides_data_monthly$month[rides_data_monthly$month==8] <- "August"
+rides_data_monthly$month[rides_data_monthly$month==9] <- "September"
+rides_data_monthly$month[rides_data_monthly$month==10] <- "October"
+rides_data_monthly$month[rides_data_monthly$month==11] <- "November"
+rides_data_monthly$month[rides_data_monthly$month==12] <- "December"
+```
+
+```{r}
+write.csv(rides_data_monthly, "Monthly Analysis.csv")
+```
+
+Now after applying formula in the Excel, update the dataset to add the hour of rides by every row in *rides_data* dataset
+
+```{r}
+average_time_analysis <- read.csv("Average Time Analysis in Hour.csv")
+```
+
+```{r}
+head(average_time_analysis)
+summary(average_time_analysis)
+```
+
+```{r}
+average_time_analysis$day_of_week[average_time_analysis$day_of_week=="Sunday"] <- 1
+average_time_analysis$day_of_week[average_time_analysis$day_of_week=="Monday"] <- 2
+average_time_analysis$day_of_week[average_time_analysis$day_of_week=="Tuesday"] <- 3
+average_time_analysis$day_of_week[average_time_analysis$day_of_week=="Wednesday"] <- 4
+average_time_analysis$day_of_week[average_time_analysis$day_of_week=="Thursday"] <- 5
+average_time_analysis$day_of_week[average_time_analysis$day_of_week=="Friday"] <- 6
+average_time_analysis$day_of_week[average_time_analysis$day_of_week=="Saturday"] <- 7
+```
+
+Plotting data to analyze ride hours and days of the week relationship
+
+```{r}
+ggplot(data=average_time_analysis) +
+  geom_col(mapping=aes(x=day_of_week, y=in_hour), fill="green")+
+  facet_wrap(~member_casual) + 
+  scale_y_continuous(labels = scales::comma) +
+  annotate("text",x=1, y=35000, label="Sunday", angle=90)+
+  annotate("text",x=2, y=35000, label="Monday", angle=90)+
+  annotate("text",x=3, y=35000, label="Tuesday", angle=90)+
+  annotate("text",x=4, y=35000, label="Wednesday", angle=90)+
+  annotate("text",x=5, y=35000, label="Thursday", angle=90)+
+  annotate("text",x=6, y=35000, label="Friday", angle=90)+
+  annotate("text",x=7, y=35000, label="Saturday", angle=90)+
+  labs(title="Total time(in Hours) on each day of the week", x="Day of the week", y="Total hours of Ride")
+ggsave("Total time(in Hours) on each day of the week.png")
+```
+
+Based on this Analysis, we will make a presentation regarding our business goal\
+Thank you...
